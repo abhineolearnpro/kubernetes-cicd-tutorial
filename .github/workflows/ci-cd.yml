@@ -2,48 +2,34 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ "main" ]   # runs when you push to main branch
-  
+    branches:
+      - main
+
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest   # ✅ use ubuntu (Docker is preinstalled)
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_USERNAME: abhijitk2015          # <-- change if needed
+      IMAGE_NAME: github-actions-project     # <-- change if needed
 
     steps:
-      # Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Log in to DockerHub
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build and push Docker image
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: abhijitk2015/github-actions-project:latest
-
-          # Clone repository using HTTPS URL without token
-          git clone https://github.com/abhineolearnpro/grade-api-gitops.git gitops
-          cd gitops
-          
-          if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s|image: ghcr.io/${{ github.repository }}:.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" deployment.yaml
-          else
-            sed -i "s|image: ghcr.io/${{ github.repository }}:.*|image: ghcr.io/${{ github.repository }}:${{ github.sha }}|g" deployment.yaml
-          fi
-          
-          # Commit changes
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add deployment.yaml
-          git commit -m "Update image to ${{ github.sha }}"
-          
-          # Push
-          git push -f https://${GIT_TOKEN}@github.com/abhineolearnpro/grade-api-gitops.git main
+          tags: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
